@@ -3,7 +3,7 @@ Image labels are metadata. So lets treat them accordingly.
 
 As an experiment I want to serialize computer vision annotation data into EXIF tags intead of using a sidecar text file. The labels are thus embeded in the image itself. The idea here is to experiment with simplifying the dataset file system, by eliminating the sidecar text files. There may be unexpected gains that justify adopting this approach, at least for small and/or proprietary datasets and fine-tuning tasks. 
 
-###Code
+### Code
 
 Embedding annotation data into EXIF tags can be a convenient way to store metadata directly within the image file. This approach can simplify data management, especially when working with large datasets. However, it's essential to consider the limitations and potential drawbacks:
 
@@ -60,7 +60,7 @@ write_to_exif_tag(path, file_name, data)
 read_data = read_from_exif_tag(path, file_name)
 print(read_data)
 ```
-###To do: Semi-Automatic Labeling Pipeline
+### To do: Semi-Automatic Labeling Pipeline
 
 To integrate this approach into a semi-automatic labeling pipeline, the following steps are suggested:
 
@@ -70,7 +70,7 @@ To integrate this approach into a semi-automatic labeling pipeline, the followin
     4. Data Storage: Design a data storage system that can efficiently store and retrieve the annotated images, along with their corresponding EXIF data. 
     5. Pipeline Automation: Automate the pipeline by integrating the data preparation, labeling, and storage steps using scripts or workflows (e.g., Apache Airflow, GitHub Actions).
     
-###Tools and libraries for building a semi-automatic labeling pipeline include:
+### Tools and libraries for building a semi-automatic labeling pipeline include:
 
     • Labelbox: A platform for data annotation and labeling. 
     • Hasty.ai: A platform for data annotation and active learning. 
