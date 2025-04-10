@@ -1,9 +1,9 @@
 # XLabel
-Image labels are metadata. So lets treat them accordingly.
+Computer Vision image labels are metadata. So lets treat them accordingly.
 
 As an experiment I want to serialize computer vision annotation data into EXIF tags intead of using a sidecar text file. The labels are thus embeded in the image itself. The idea here is to experiment with simplifying the dataset file system, by eliminating the sidecar text files. There may be unexpected gains that justify adopting this approach, at least for small and/or proprietary datasets and fine-tuning tasks. 
 
-### Code
+## Code
 
 Embedding annotation data into EXIF tags can be a convenient way to store metadata directly within the image file. This approach can simplify data management, especially when working with large datasets. However, it's essential to consider the limitations and potential drawbacks:
 
@@ -60,17 +60,17 @@ write_to_exif_tag(path, file_name, data)
 read_data = read_from_exif_tag(path, file_name)
 print(read_data)
 ```
-### To do: Semi-Automatic Labeling Pipeline
+## To do: Semi-Automatic Labeling Pipeline
 
 To integrate this approach into a semi-automatic labeling pipeline, the following steps are suggested:
 
-    1. Data Preparation: Develop a script to extract the EXIF data from the images and store it in a temporary format (e.g., JSON, CSV) for easier processing. 
-    2. Labeling Tool: Create a simple labeling tool that allows users to review the images and update the annotation data stored in the EXIF tags. This tool can be a web application, desktop application, or even a Jupyter Notebook. 
-    3. Data Validation: Implement data validation checks to ensure that the annotation data is in the correct format and within the size limits of the EXIF tags. 
-    4. Data Storage: Design a data storage system that can efficiently store and retrieve the annotated images, along with their corresponding EXIF data. 
-    5. Pipeline Automation: Automate the pipeline by integrating the data preparation, labeling, and storage steps using scripts or workflows (e.g., Apache Airflow, GitHub Actions).
+    . Data Preparation: Develop a script to extract the EXIF data from the images and store it in a temporary format (e.g., JSON, CSV) for easier processing. 
+    . Labeling Tool: Create a simple labeling tool that allows users to review the images and update the annotation data stored in the EXIF tags. This tool can be a web application, desktop application, or even a Jupyter Notebook. 
+    . Data Validation: Implement data validation checks to ensure that the annotation data is in the correct format and within the size limits of the EXIF tags. 
+    . Data Storage: Design a data storage system that can efficiently store and retrieve the annotated images, along with their corresponding EXIF data. 
+    . Pipeline Automation: Automate the pipeline by integrating the data preparation, labeling, and storage steps using scripts or workflows (e.g., Apache Airflow, GitHub Actions).
     
-### Tools and libraries for building a semi-automatic labeling pipeline include:
+## Tools and libraries for building a semi-automatic labeling pipeline include:
 
     • Labelbox: A platform for data annotation and labeling. 
     • Hasty.ai: A platform for data annotation and active learning. 
