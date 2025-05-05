@@ -1,7 +1,7 @@
 # XLabel
 Computer Vision image labels are metadata. So lets treat them accordingly.
 
-As an experiment I want to serialize computer vision annotation data into EXIF tags intead of using a sidecar text file. The labels are thus embeded in the image itself. The idea here is to experiment with simplifying the dataset file system, by eliminating the sidecar text files. There may be unexpected gains that justify adopting this approach, at least for small and/or proprietary datasets and fine-tuning tasks. 
+As an experiment, I'm exploring the idea of embedding computer vision annotation data directly into an image's EXIF tags, rather than storing it in separate sidecar text files. This approach effectively bundles the labels with the image itself, simplifying the dataset's file structure. While it's a bit unconventional, it could offer unexpected advantages — especially for smaller or proprietary datasets, or for fine-tuning tasks where managing separate annotation files adds unnecessary overhead. 
 
 ## Code
 
@@ -15,50 +15,88 @@ The provided code is just a starting point, but it can be improved for better er
 
 ```python
 
+import os
+import json
 import pyexiftool
 
-def write_to_exif_tag(path, file_name, data):
+def write_to_exif_tag(file_path, data, tag="UserComment"):
     """
-    Write data to the UserComment EXIF tag of an image file.
+    Write data to a specified EXIF tag of an image file.
 
     Args:
-        path (str): Path to the image file.
-        file_name (str): Name of the image file.
-        data (str): Data to be stored in the EXIF tag.
-    """
-    try:
-        with pyexiftool.ExifTool() as et:
-            et.write_metadata(f"{path}/{file_name}", {"UserComment": data})
-    except Exception as e:
-        print(f"Error writing to EXIF tag: {e}")
-
-def read_from_exif_tag(path, file_name):
-    """
-    Read data from the UserComment EXIF tag of an image file.
-
-    Args:
-        path (str): Path to the image file.
-        file_name (str): Name of the image file.
+        file_path (str): Full path to the image file.
+        data (str or dict): Data to store (dict is JSON-serialized).
+        tag (str): EXIF tag to write to (default: UserComment).
 
     Returns:
-        str: Data stored in the EXIF tag, or None if not found.
+        bool: True if successful, False otherwise.
     """
+    if not os.path.isfile(file_path):
+        print(f"Error: File {file_path} does not exist or is not a file.")
+        return False
+
+    # Convert dict to JSON string if necessary
+    if isinstance(data, dict):
+        try:
+            data = json.dumps(data, ensure_ascii=False)
+        except TypeError as e:
+            print(f"Error serializing data to JSON: {e}")
+            return False
+
     try:
         with pyexiftool.ExifTool() as et:
-            metadata = et.get_metadata(f"{path}/{file_name}")
-            return metadata.get("UserComment")
+            et.write_metadata(file_path, {tag: data})
+        return True
     except Exception as e:
-        print(f"Error reading from EXIF tag: {e}")
+        print(f"Error writing to EXIF tag {tag}: {e}")
+        return False
+
+def read_from_exif_tag(file_path, tag="UserComment", as_json=False):
+    """
+    Read data from a specified EXIF tag of an image file.
+
+    Args:
+        file_path (str): Full path to the image file.
+        tag (str): EXIF tag to read from (default: UserComment).
+        as_json (bool): If True, attempt to parse data as JSON (default: False).
+
+    Returns:
+        str or dict: Data stored in the EXIF tag, or None if not found.
+    """
+    if not os.path.isfile(file_path):
+        print(f"Error: File {file_path} does not exist or is not a file.")
+        return None
+
+    try:
+        with pyexiftool.ExifTool() as et:
+            metadata = et.get_metadata(file_path)
+            data = metadata.get(tag)
+            if data and as_json:
+                try:
+                    return json.loads(data)
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing JSON from {tag}: {e}")
+                    return None
+            return data
+    except Exception as e:
+        print(f"Error reading from EXIF tag {tag}: {e}")
         return None
 
 # Example usage
-path = "/path/to/image"
-file_name = "image.jpg"
-data = "This is the data to be stored in the EXIF tag"
+file_path = os.path.join("path", "to", "image", "image.jpg")
+annotation = {
+    "labels": ["cat", "dog"],
+    "bbox": [100, 150, 200, 250]
+}
 
-write_to_exif_tag(path, file_name, data)
-read_data = read_from_exif_tag(path, file_name)
-print(read_data)
+# Write structured annotation data
+success = write_to_exif_tag(file_path, annotation)
+if success:
+    print("Write successful")
+
+# Read structured annotation data
+data = read_from_exif_tag(file_path, as_json=True)
+print(data)
 ```
 ## To do: Semi-Automatic Labeling Pipeline
 
