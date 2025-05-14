@@ -102,15 +102,15 @@ print(data)
 
 To integrate this approach into a semi-automatic labeling pipeline, the following steps are suggested:
 
-+ Data Preparation:
+### Data Preparation:
   Develop a script to extract the EXIF data from the images and store it in a temporary format (e.g., JSON, CSV) for easier processing. 
-+ Labeling Tool:
+### Labeling Tool:
   Create a simple labeling tool that allows users to review the images and update the annotation data stored in the EXIF tags. This tool can be a web application, desktop application, or even a Jupyter Notebook.
-+ Data Validation:
+### Data Validation:
   Implement data validation checks to ensure that the annotation data is in the correct format and within the size limits of the EXIF tags. 
-+ Data Storage:
+### Data Storage:
   Design a data storage system that can efficiently store and retrieve the annotated images, along with their corresponding EXIF data. 
-+ Pipeline Automation:
+### Pipeline Automation:
   Automate the pipeline by integrating the data preparation, labeling, and storage steps using scripts or workflows (e.g., Apache Airflow, GitHub Actions).
     
 ## Tools and libraries for building a semi-automatic labeling pipeline include:
