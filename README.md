@@ -7,9 +7,9 @@ As an experiment, I'm exploring the idea of embedding computer vision annotation
 
 Embedding annotation data into EXIF tags can be a convenient way to store metadata directly within the image file. This approach can simplify data management, especially when working with large datasets. However, it's essential to consider the limitations and potential drawbacks:
 
-    • EXIF tags have size limitations, which may restrict the amount of data that can be stored. 
-    • Not all image formats support EXIF tags (e.g., PNG, GIF). 
-    • Some image processing tools or libraries might strip or modify EXIF tags, potentially leading to data loss. 
++ EXIF tags have size limitations, which may restrict the amount of data that can be stored. 
++ Not all image formats support EXIF tags (e.g., PNG, GIF). 
++ Some image processing tools or libraries might strip or modify EXIF tags, potentially leading to data loss. 
     
 The provided code is just a starting point, but it can be improved for better error handling, flexibility, and readability.
 
