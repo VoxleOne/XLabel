@@ -1,5 +1,5 @@
 import os
-from xlabelcore import write_to_exif_tag, read_from_exif_tag
+from xlabel import write_to_exif_tag, read_from_exif_tag
 
 # Ensure you have an image file at this path for testing
 # For example, create a dummy 'test_image.jpg' in an 'images' directory
