@@ -1,3 +1,7 @@
+# xreader.py — MIT License
+# Author: Eraldo Marques <eraldo.bernardo@gmail.com> — Created: 2025-06-16
+# See LICENSE.txt for full terms. This header must be retained in redistributions.
+
 import json
 import struct
 import io
