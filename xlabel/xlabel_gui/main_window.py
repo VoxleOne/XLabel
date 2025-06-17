@@ -1,0 +1,45 @@
+from PySide6.QtWidgets import (
+    QMainWindow, QStatusBar, QDockWidget
+)
+from PySide6.QtCore import Qt
+from .image_viewer import ImageViewer
+from .annotation_list import AnnotationList
+from .class_list import ClassList
+
+class XLabelMainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("XLabel - Annotation Tool")
+        self.setGeometry(100, 100, 1200, 800)
+
+        # Central image viewer
+        self.image_viewer = ImageViewer(self)
+        self.setCentralWidget(self.image_viewer)
+
+        # Annotation list dock
+        self.annotation_list = AnnotationList(self)
+        self.annotations_dock = QDockWidget("Annotations", self)
+        self.annotations_dock.setWidget(self.annotation_list)
+        self.annotations_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.annotations_dock)
+
+        # Class list dock
+        self.class_list = ClassList(self)
+        self.class_dock = QDockWidget("Class Names", self)
+        self.class_dock.setWidget(self.class_list)
+        self.class_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.class_dock)
+
+        self._create_menu()
+        self._create_status_bar()
+
+    def _create_menu(self):
+        menu = self.menuBar()  # <-- FIXED
+        file_menu = menu.addMenu("&File")
+        # Add menu actions in later bricks
+        help_menu = menu.addMenu("&Help")
+
+    def _create_status_bar(self):
+        status = QStatusBar(self)
+        status.showMessage("Ready")
+        self.setStatusBar(status)
