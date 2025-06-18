@@ -1,0 +1,35 @@
+[project]
+name = "xlabel"
+version = "0.3.1"
+description = "Self-Contained Image Annotation Toolkit with GUI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "Pillow>=9.0.0",
+]
+
+# This creates command-line scripts for the CLI and GUI
+# after installing the package.
+[project.scripts]
+xlabel = "xlabel.cli:main"
+xlabel-gui = "xlabel.gui:main"
+
+# Development dependencies for testing, formatting, and linting.
+# Install with: pip install -e .[dev]
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "I",  # isort
+]
