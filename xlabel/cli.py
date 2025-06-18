@@ -1,4 +1,4 @@
-# xlabel_cli.py — MIT License
+# cli.py — MIT License
 # Author: Eraldo Marques
 # Created: 2025-06-16 (Project Inception)
 # This file is part of the XLabel project.
@@ -14,8 +14,8 @@ import glob
 import xml.etree.ElementTree as ET
 import datetime 
 
-import xcreator
-import xreader
+import creator
+import reader
 import xlabel_format_converters as xlabel_converters 
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
