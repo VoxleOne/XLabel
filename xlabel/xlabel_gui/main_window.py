@@ -43,3 +43,24 @@ class XLabelMainWindow(QMainWindow):
         status = QStatusBar(self)
         status.showMessage("Ready")
         self.setStatusBar(status)
+        
+# --- Menu Action Handlers ---
+
+    def _open_file(self):
+        QMessageBox.information(self, "Open", "This would open a file dialog to select an XLabel PNG.")
+
+    def _save_file(self):
+        QMessageBox.information(self, "Save", "This would save the current annotations to the PNG.")
+
+    def _save_file_as(self):
+        QMessageBox.information(self, "Save As", "This would open a file dialog to save as a new XLabel PNG.")
+
+    def _show_about(self):
+        QMessageBox.about(
+            self,
+            "About XLabel",
+            "<b>XLabel - Annotation Tool</b><br><br>"
+            "Version 0.1.0 (GUI Prototype)<br>"
+            "Embed and manage image annotations directly within PNG files.<br><br>"
+            "Created by VoxleOne & Copilot (AI Collaborator)."
+        )
