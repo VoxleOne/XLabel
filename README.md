@@ -88,7 +88,7 @@ Annotations are stored within the PNG's `xlDa` chunk, as structured JSON. This i
 ### Launch the GUI
 
 ```bash
-python xlabel_gui.py
+python gui.py
 ```
 
 - Open images or entire directories to annotate.
@@ -102,7 +102,7 @@ python xlabel_gui.py
 All CLI commands from v0.2 are still supported and work seamlessly with GUI-created files.
 
 ```bash
-python xlabel_cli.py --help
+python cli.py --help
 ```
 
 **Examples:**
