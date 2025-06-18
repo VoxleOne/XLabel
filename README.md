@@ -71,11 +71,11 @@ Annotations are stored within the PNG's `xlDa` chunk, as structured JSON. This i
 - **Python 3.x** required.
 - **Dependencies:**  
   - Pillow  
-  - Tkinter (for GUI; included with most Python distributions)
+  - PySide6
 - Install with:
   ```bash
-  pip install Pillow
-  # Tkinter is usually pre-installed; if not, install via your OS package manager
+  pip install Pillow PySide6
+  
   ```
 
 - **Download:**  
@@ -109,22 +109,22 @@ python xlabel_cli.py --help
 
 - Batch create XLabel PNGs:
   ```bash
-  python xlabel_cli.py create batch ./images/ ./json_labels/ ./output_xlabels/
+  python cli.py create batch ./images/ ./json_labels/ ./output_xlabels/
   ```
 - Export embedded annotations to JSON sidecars:
   ```bash
-  python xlabel_cli.py read batch ./input_xlabels/ ./output_jsons/
+  python cli.py read batch ./input_xlabels/ ./output_jsons/
   ```
 - Convert COCO to XLabel PNGs:
   ```bash
-  python xlabel_cli.py convert 2xlabel coco --batch \
+  python cli.py convert 2xlabel coco --batch \
     --input-coco annotations.coco.json \
     --input-image-dir ./coco_images/ \
     --output-xlabel-dir ./output_xlabels_from_coco/
   ```
 - Convert XLabel PNGs to aggregated COCO JSON:
   ```bash
-  python xlabel_cli.py convert fromxlabel coco --batch \
+  python cli.py convert fromxlabel coco --batch \
     --input-xlabel-dir-conv ./my_xlabel_dataset/ \
     --output-coco output_dataset.coco.json
   ```
@@ -133,10 +133,10 @@ python xlabel_cli.py --help
 
 ## Project Structure
 
-- `xlabel_gui.py`: Graphical user interface application (NEW in v0.3)
-- `xlabel_cli.py`: Command-line interface.
-- `xcreator.py`: Module for embedding metadata.
-- `xreader.py`: Module for reading embedded metadata.
+- `gui.py`: Graphical user interface application (NEW in v0.3)
+- `cli.py`: Command-line interface.
+- `creator.py`: Module for embedding metadata.
+- `reader.py`: Module for reading embedded metadata.
 - `xlabel_format_converters/`: Format conversion logic (COCO, VOC, YOLO).
 
 ---
@@ -149,7 +149,7 @@ python xlabel_cli.py --help
 
 ---
 
-## Future Roadmap
+## In The Works
 
 - Support for more annotation types (e.g., keypoints, multi-labels).
 - Multi-layer or multi-task annotations in a single XLabel PNG.
