@@ -1,5 +1,5 @@
-# xlabel_gui.py — MIT License
-# Author: VoxleOne & Eraldo Marques (AI Collaborator)
+# gui.py — MIT License
+# Author: Eraldo Marques + AI Collaborator
 # Created: 2025-06-17 (GUI Inception)
 # This file is part of the XLabel project.
 # See LICENSE.txt for full license terms. This header should be retained.
@@ -23,15 +23,15 @@ except ImportError:
 
 # Import XLabel core modules (assuming they are in the same directory or Python path)
 try:
-    import xreader 
-    import xcreator
+    import reader 
+    import creator
     # import xlabel_format_converters # We'll use this later
 except ImportError as e:
     print(f"Could not import XLabel core modules: {e}. Ensure they are in the Python path.")
     sys.exit(1)
 
 # --- Setup Logger for GUI ---
-gui_logger = logging.getLogger("xlabel_gui")
+gui_logger = logging.getLogger("gui")
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 
 
@@ -138,7 +138,7 @@ class XLabelMainWindow(QMainWindow):
     # --- Action Handlers ---
     def open_file_dialog(self):
         gui_logger.info("Open file dialog triggered.")
-        # Assuming xreader and xcreator are in the same directory or Python path
+        # Assuming reader and creator are in the same directory or Python path
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
             "Open XLabel PNG File", 
@@ -152,7 +152,7 @@ class XLabelMainWindow(QMainWindow):
 
     def load_xlabel_png(self, file_path):
         try:
-            self.current_xlabel_metadata = xreader.read_xlabel_metadata_from_png(file_path)
+            self.current_xlabel_metadata = reader.read_xlabel_metadata_from_png(file_path)
             if self.current_xlabel_metadata:
                 self.statusBar().showMessage(f"Loaded: {os.path.basename(file_path)} - XLabel v{self.current_xlabel_metadata.get('xlabel_version', 'Unknown')}")
                 
@@ -182,11 +182,11 @@ class XLabelMainWindow(QMainWindow):
                     else: # Not even a valid image
                         QMessageBox.warning(self, "Load Error", f"Could not load '{os.path.basename(file_path)}' as an image or XLabel PNG.")
                         self.clear_lists_and_metadata()
-                except Exception as e_img: # Should be caught by xreader if it's trying to parse PNG structure
+                except Exception as e_img: # Should be caught by reader if it's trying to parse PNG structure
                     QMessageBox.warning(self, "Load Error", f"Error loading '{os.path.basename(file_path)}': {e_img}")
                     self.clear_lists_and_metadata()
                     
-        except xreader.XLabelError as e:
+        except reader.XLabelError as e:
             QMessageBox.critical(self, "XLabel Read Error", f"Error reading XLabel metadata from '{file_path}':\n{e}")
             self.clear_lists_and_metadata()
             gui_logger.error(f"XLabel read error: {e}", exc_info=True)
@@ -281,7 +281,7 @@ class XLabelMainWindow(QMainWindow):
             return
         gui_logger.info(f"Placeholder: Save triggered for {self.current_image_path}")
         QMessageBox.information(self, "Save", "Save functionality not yet fully implemented.")
-        # Call xcreator.add_xlabel_metadata_to_png(self.current_image_path, self.current_image_path, self.current_xlabel_metadata, overwrite=True)
+        # Call creator.add_xlabel_metadata_to_png(self.current_image_path, self.current_image_path, self.current_xlabel_metadata, overwrite=True)
         # Need to handle image source if original was not PNG. For now, assume we save over the loaded PNG.
 
     def save_file_as(self):
@@ -318,9 +318,9 @@ class XLabelMainWindow(QMainWindow):
                 #    For this MVP, we assume self.current_image_path IS the image with pixels.
                 # 2. We use self.current_xlabel_metadata which holds the annotation data.
                 
-                # The xcreator function needs the path to the *source image for pixels*.
+                # The creator function needs the path to the *source image for pixels*.
                 # And the metadata to embed.
-                xcreator.add_xlabel_metadata_to_png(
+                creator.add_xlabel_metadata_to_png(
                     source_image_for_pixels, # Path of the image whose pixels will be used
                     file_path,               # New output path for the XLabel PNG
                     self.current_xlabel_metadata, 
@@ -330,7 +330,7 @@ class XLabelMainWindow(QMainWindow):
                 # Optionally, update current_image_path to the new path if we want "Save" to now use it
                 # self.current_image_path = file_path 
                 # self.save_action.setEnabled(False) # If we consider "Save As" to clear modified state
-            except xcreator.XLabelError as e:
+            except creator.XLabelError as e:
                 QMessageBox.critical(self, "Save Error", f"Could not save XLabel PNG to '{file_path}':\n{e}")
             except Exception as e:
                 QMessageBox.critical(self, "Save Error", f"An unexpected error occurred while saving to '{file_path}':\n{e}")
