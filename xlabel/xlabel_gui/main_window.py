@@ -64,7 +64,6 @@ class XLabelMainWindow(QMainWindow):
         status = QStatusBar(self)
         status.showMessage("Ready")
         self.setStatusBar(status)
-<<<<<<< HEAD
 
     # --- Menu Action Handlers ---
 
@@ -87,13 +86,6 @@ class XLabelMainWindow(QMainWindow):
         self.image_viewer.set_image(pixmap)
         self.statusBar().showMessage(f"Loaded {file_name}")
         self.annotation_list.set_annotations(self.image_viewer.get_rectangles())
-=======
-        
-# --- Menu Action Handlers ---
-
-    def _open_file(self):
-        QMessageBox.information(self, "Open", "This would open a file dialog to select an XLabel PNG.")
->>>>>>> c78b968bbb32affd013fc1bc0238c31c27408a90
 
     def _save_file(self):
         QMessageBox.information(self, "Save", "This would save the current annotations to the PNG.")
@@ -110,9 +102,6 @@ class XLabelMainWindow(QMainWindow):
             "Embed and manage image annotations directly within PNG files.<br><br>"
             "Created by VoxleOne & Copilot (AI Collaborator)."
         )
-<<<<<<< HEAD
 
     def _on_annotation_selected(self, idx):
         self.image_viewer.set_selected_rect(idx)
-=======
->>>>>>> c78b968bbb32affd013fc1bc0238c31c27408a90
