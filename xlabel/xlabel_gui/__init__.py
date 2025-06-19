@@ -1,3 +1,5 @@
-# __init__.py for panels module
-from .base_panel import BasePanel
-from .bbox_panel import BoundingBoxPanel
+# __init__.py for the main GUI package
+from . import main
+from . import main_window
+from . import image_viewer
+from . import panels
