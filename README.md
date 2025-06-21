@@ -3,6 +3,12 @@
 XLabel is an open-source Python toolkit for embedding computer vision annotations directly into PNG image files as custom data chunks. With v0.3, **XLabel now features an intuitive graphical user interface (GUI)**, making the creation, editing, and management of annotated image datasets easier than ever. The GUI complements the robust command-line and programmatic workflows, offering a visual, user-friendly way to work with embedded image labels.
 
 ---
+<p align="center">
+  <img src="assets/xlabel-screen.png" width="900" alt="XLabel GUI Screenshot">
+</p>
+
+
+---
 
 ## Core Idea
 

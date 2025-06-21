@@ -1,60 +1,63 @@
-from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPainter, QPen
-from PySide6.QtCore import Qt, Signal, QRect, QPoint
+from PySide6.QtCore import Signal, QPoint, QRect, Qt
+from PySide6.QtGui import QKeyEvent
 from .base_panel import BasePanel
 
 class BoundingBoxPanel(BasePanel):
-    """Interactive panel for drawing bounding boxes."""
-    
-    # Signal -> Emits the final rectangle when drawing is complete
-    new_annotation = Signal(QRect)
+    # --- THE FIX: The signal no longer needs to carry data ---
+    new_annotation = Signal()
 
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self._drawing = False
-        self._start_point = QPoint()
-        self._current_rect = QRect()
+        self._annotations = []
+        self._is_drawing = False
+        self._start_pos = None
+        self._current_rect = None
+        self.setFocusPolicy(Qt.StrongFocus)
 
-    def paintEvent(self, event):
-        """Draws the semi-transparent background and the in-progress rectangle."""
-        painter = QPainter(self)
-        # Transparent background
-        painter.fillRect(self.rect(), Qt.transparent)
-        
-        # If we are currently drawing, draw the "rubber band" rectangle
-        if self._drawing:
-            pen = QPen(Qt.cyan, 2) # Use a distinct color for the drawing tool
-            painter.setPen(pen)
-            # The panel's coordinates are the same as the viewer's, so we can draw directly
-            painter.drawRect(self._current_rect)
+    def get_annotations(self):
+        return {
+            "completed": self._annotations,
+            "active": self._current_rect
+        }
+
+    def delete_annotation(self, index):
+        if 0 <= index < len(self._annotations):
+            self._annotations.pop(index)
+            return True
+        return False
+
+    def clear_annotations(self):
+        self._annotations.clear()
+        self._current_rect = None
+        if self.parent():
+            self.parent().update()
 
     def mousePressEvent(self, event):
+        image_pos = self.parent().map_to_image(event.pos())
+        if not image_pos: return
         if event.button() == Qt.LeftButton:
-            self._start_point = event.pos()
-            # Check if the click is inside the actual image area
-            if self.parent().map_to_image(self._start_point):
-                self._drawing = True
-                self._current_rect = QRect(self._start_point, self._start_point)
-                self.update()
+            self._is_drawing = True
+            self._start_pos = image_pos
+            self._current_rect = QRect(self._start_pos, self._start_pos)
+            self.parent().update()
 
     def mouseMoveEvent(self, event):
-        if self._drawing:
-            self._current_rect = QRect(self._start_point, event.pos()).normalized()
-            self.update()
+        if not self._is_drawing: return
+        image_pos = self.parent().map_to_image(event.pos())
+        if not image_pos: return
+        self._current_rect = QRect(self._start_pos, image_pos).normalized()
+        self.parent().update()
 
     def mouseReleaseEvent(self, event):
-        if self._drawing and event.button() == Qt.LeftButton:
-            self._drawing = False
-            
-            # Map the final rectangle from widget coordinates to image coordinates
-            top_left_img = self.parent().map_to_image(self._current_rect.topLeft())
-            bottom_right_img = self.parent().map_to_image(self._current_rect.bottomRight())
-            
-            if top_left_img and bottom_right_img:
-                final_rect = QRect(top_left_img, bottom_right_img).normalized()
-                # Emit the signal with the final, correctly mapped rectangle
-                if final_rect.width() > 2 and final_rect.height() > 2: # Ignore tiny accidental clicks
-                    self.new_annotation.emit(final_rect)
-            
-            self._current_rect = QRect()
-            self.update()
+        if not self._is_drawing or event.button() != Qt.LeftButton:
+            return
+        
+        self._is_drawing = False
+        if self._current_rect and self._current_rect.width() > 3 and self._current_rect.height() > 3:
+            # --- THE FIX: Add the annotation directly and emit the simple signal ---
+            self._annotations.append(self._current_rect)
+            self._current_rect = None
+            self.new_annotation.emit()
+        else:
+            self._current_rect = None
+            self.parent().update()
