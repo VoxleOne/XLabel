@@ -4,7 +4,7 @@ XLabel is an open-source Python toolkit for embedding computer vision annotation
 
 ---
 <p align="center">
-  <img src="assets/xlabel-screen.png" width="900" alt="XLabel GUI Screenshot">
+  <img src="assets/xl-test.png" width="900" alt="XLabel GUI Screenshot">
 </p>
 
 
