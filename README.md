@@ -1,243 +1,121 @@
-# XLabel: Self-Contained Image Annotations
+# XLabel 🏷️
 
-**XLabel** is a Python toolkit for embedding computer vision annotations directly into PNG image files using custom data chunks. This approach simplifies dataset management by keeping images and their labels together in a single file, eliminating the need for separate "sidecar" annotation files (like JSON, XML, or TXT).
+![XLabel GUI](https://user-images.githubusercontent.com/12345/placeholder.jpg)
+*A placeholder image of the XLabel GUI in action. You can replace this with a real screenshot.*
 
-The tool provides a command-line interface (`xlabel_cli.py`) and a set of Python modules to:
-*   Create XLabel PNGs by embedding structured JSON metadata.
-*   Read embedded metadata from XLabel PNGs.
-*   Convert between XLabel PNGs and common annotation formats (COCO, Pascal VOC, YOLO).
-*   Support for both single-file and batch processing operations.
+---
+
+**XLabel is a Python toolkit for embedding computer vision annotations directly into PNG image files using custom data chunks.** This approach simplifies dataset management by keeping images and their labels together in a single file, eliminating the need for separate "sidecar" annotation files (like JSON, XML, or TXT).
+
+The project provides two primary tools:
+1.  A feature-rich **graphical user interface (GUI)** for manual annotation.
+2.  A versatile **command-line interface (CLI)** for batch processing and format conversion.
 
 ## Core Idea & Why XLabel?
 
-Computer Vision image labels are metadata. Instead of relying on external files that can get mismatched or lost, XLabel stores this metadata directly within the PNG image itself using a custom chunk type named `xlDa` (XLabel Data). This makes datasets more portable and easier to manage.
+Computer Vision image labels are metadata. Instead of relying on external files that can get mismatched or lost, XLabel stores this metadata directly within the PNG image itself using a custom chunk type named `xlDa` (XLabel Data). This makes datasets more portable, robust, and easier to manage.
 
-**Key Use Cases:**
+### Key Use Cases:
 
 *   **Smaller, Proprietary Datasets:** For research or internal projects where managing numerous sidecar files for a modest number of images becomes cumbersome, XLabel offers a streamlined, single-file-per-image approach.
 *   **Fine-Tuning Datasets:** Ideal for creating and managing small, specialized datasets for fine-tuning larger pre-trained models. For example, a dataset of "Zebu cattle" images (underrepresented in COCO) can be easily curated with XLabel to fine-tune a general "cow" detection model.
-*   **Confidential Datasets:** While not a cryptographic solution, embedding data within the image can act as a mild layer of obfuscation, as the annotations are not immediately visible as separate files. This can be useful in scenarios where data privacy is a concern and casual browsing of annotation files is to be discouraged.
+*   **Confidential Datasets:** While not a cryptographic solution, embedding data within the image can act as a mild layer of obfuscation, as the annotations are not immediately visible as separate files. This can be useful in scenarios where data privacy is a concern.
 *   **Simplified Data Transfer & Archival:** Bundling images and labels simplifies sharing, backup, and archival of datasets.
-*   **Educational Purposes:** Provides a clear example of how metadata can be embedded within file formats and encourages thinking about data structure.
-
-The `xlDa` chunk stores:
-*   A version string for the XLabel format.
-*   Image properties (original filename, width, height).
-*   A list of class names.
-*   A list of annotations, each including:
-    *   `class_id` (index into the class names list).
-    *   Bounding box (`bbox`: `[xmin, ymin, width, height]`).
-    *   Optional confidence `score`.
-    *   Optional `segmentation` data (polygons or RLE).
-    *   Optional `custom_attributes` (a flexible JSON string for additional metadata).
+*   **Educational Purposes:** Provides a clear, practical example of how metadata can be embedded within file formats.
 
 ## Features
 
-*   **Self-Contained Annotations:** Labels travel with the image.
-*   **CLI Tool (`xlabel_cli.py`):**
-    *   `create`: Embed JSON annotations into a standard PNG, creating an XLabel PNG.
-        *   `single`: Process one image and one JSON file.
-        *   `batch`: Process a directory of images and a directory of corresponding JSON files.
-    *   `read`: Extract embedded XLabel metadata from an XLabel PNG and output as JSON.
-        *   `single`: Read from one XLabel PNG.
-        *   `batch`: Read from a directory of XLabel PNGs, outputting individual JSON files.
-    *   `convert`: Convert annotations between XLabel PNGs and other standard formats.
-        *   `2xlabel`: Convert from COCO, VOC, or YOLO to XLabel PNG(s).
-            *   `--single`: Convert a single annotation file (and its associated image) to one XLabel PNG.
-            *   `--batch`: Convert a dataset (e.g., one COCO JSON + image dir, or dirs of VOC XMLs/YOLO TXTs + image dir) to multiple XLabel PNGs.
-        *   `fromxlabel`: Convert from XLabel PNG(s) to COCO, VOC, or YOLO.
-            *   `--single`: Convert one XLabel PNG to the target format.
-            *   `--batch`: Convert a directory of XLabel PNGs.
-                *   For COCO: Creates a single aggregated COCO JSON file.
-                *   For VOC/YOLO: Creates individual annotation files in an output directory.
-*   **Python Modules:**
-    *   `xcreator.py`: Handles embedding metadata into PNGs.
-    *   `xreader.py`: Handles reading metadata from XLabel PNGs.
-    *   `xlabel_format_converters` (package):
-        *   `coco_converter.py`
-        *   `voc_converter.py`
-        *   `yolo_converter.py`
-        *   `common.py` (shared exceptions and constants)
-*   **Supports:**
-    *   Bounding boxes.
-    *   Segmentation (polygons and Run-Length Encoding - RLE).
-    *   Confidence scores.
-    *   Custom key-value attributes per annotation.
+XLabel is designed to be a comprehensive solution for self-contained image annotation.
 
-## Installation / Dependencies
+### GUI Features
 
-1.  **Python 3.x** is required.
-2.  **Pillow (PIL Fork):** The primary dependency for image manipulation and PNG chunk handling.
-    ```bash
-    pip install Pillow
-    ```
-3.  Clone this repository or download the Python scripts.
+*   **Multi-Mode Annotation:** Create different types of annotations in the same file.
+    *   **Bounding Boxes:** For object detection.
+    *   **Polygons:** For precise instance segmentation.
+    *   **Pixel Masks:** For semantic segmentation, with brush and eraser tools.
+    *   **Keypoints:** For pose estimation (planned).
+*   **Interactive Viewer:** Smoothly pan and zoom, with clear rendering of active and completed annotations.
+*   **Dockable Panels:** Manage annotation lists and class names in a clean, organized workspace.
+*   **Direct-to-PNG Workflow:** Open a standard PNG, add labels, and save it back as an XLabel-enhanced PNG.
 
-## Usage (`xlabel_cli.py`)
+### Core & CLI Features (Planned)
 
-The main tool is `xlabel_cli.py`. You can get help by running:
+*   **Create & Read:** Embed structured JSON metadata into PNGs and read it back programmatically.
+*   **Rich Format Conversion:** Convert between the integrated XLabel PNG format and common annotation standards, including **COCO**, **Pascal VOC**, and **YOLO**.
+*   **Sidecar Export:** Export embedded annotations back to traditional sidecar file structures (e.g., separate `.json` or `.xml` files) for compatibility with other tools.
+*   **Batch Processing:** Scriptable operations for handling entire datasets at once.
+
+## Installation
+
+XLabel requires **Python 3.11** or newer.
+
+To get started, clone the repository and install the required dependencies.
+
 ```bash
-python xlabel_cli.py --help
-python xlabel_cli.py <command> --help
-python xlabel_cli.py <command> <subcommand> --help
+# Clone the repository
+git clone https://github.com/your-username/xlabel.git
+cd xlabel
+
+# Install dependencies from requirements.txt
+pip install -r requirements.txt
 ```
 
-### Examples
+The `requirements.txt` file should contain:
 
-#### 1. Create an XLabel PNG (Single)
-
-Given `image.jpg` and `annotation.json`:
-```json
-// annotation.json
-{
-    "image_properties": {
-        "filename": "image.jpg", 
-        "width": 0, 
-        "height": 0 
-    },
-    "class_names": ["cat", "dog"],
-    "annotations": [
-        {
-            "class_id": 0, 
-            "bbox": [50, 50, 100, 120], 
-            "score": 0.95,
-            "segmentation": [[50,50, 150,50, 150,170, 50,170]], 
-            "custom_attributes": {"occluded": false}
-        },
-        {
-            "class_id": 1, 
-            "bbox": [200, 80, 80, 90], 
-            "score": 0.88
-        }
-    ]
-}
+```text name=requirements.txt
+PySide6
+Pillow
 ```
-Command:
+
+## Usage
+
+### XLabel Annotation GUI
+
+To launch the graphical annotation tool, run `main.py`:
+
 ```bash
-python xlabel_cli.py create single image.jpg annotation.json output_image.xlabel.png
+python -m xlabel.gui.main
 ```
-This creates `output_image.xlabel.png` with the annotation data embedded. (`width` and `height` in `image_properties` will be auto-populated from `image.jpg`).
 
-#### 2. Create XLabel PNGs (Batch)
+**Workflow:**
+1.  Go to `File > Open XLabel PNG...` to load an image.
+2.  Select an annotation tool from the left-hand toolbar (Bounding Box, Polygon, or Mask).
+3.  Create annotations directly on the image:
+    *   **Bounding Box:** Click and drag to draw a box.
+    *   **Polygon:** Click to place points. Right-click or press `Enter` to finalize the shape.
+    *   **Mask:** Click and drag to paint with the brush. Use the `Brush` (B) and `Eraser` (E) modes for adjustments. Right-click or press `Enter` to finalize the mask.
+4.  View and manage your annotations in the "Annotations" panel on the right.
+5.  Go to `File > Save` or `File > Save As...` to save your work. The annotations will be embedded directly into the new PNG file.
 
-*   `./images/` contains `img1.png`, `img2.jpg`, ...
-*   `./json_labels/` contains `img1.json`, `img2.json`, ... (filenames must match images, excluding extension)
-*   `./output_xlabels/` is where XLabel PNGs will be saved.
+### Command-Line Interface (CLI)
 
-Command:
+The `xlabel_cli.py` script will provide powerful batch-processing capabilities.
+
+**(Note: The following examples are illustrative of planned features. Please refer to the script's help menu for exact commands and arguments once implemented.)**
+
+**Example: Add metadata to a single image**
 ```bash
-python xlabel_cli.py create batch ./images/ ./json_labels/ ./output_xlabels/ --overwrite
+python xlabel_cli.py add --image my_image.png --json-data '{"class": "cat", "bbox": [10, 20, 50, 60]}'
 ```
 
-#### 3. Read Metadata from an XLabel PNG (Single)
-
-To console:
+**Example: Extract annotations from an XLabel PNG to a JSON file**
 ```bash
-python xlabel_cli.py read single output_image.xlabel.png
+python xlabel_cli.py extract --image my_labeled_image.png --output-file annotations.json
 ```
-To a JSON file:
+
+**Example: Convert a directory of XLabel PNGs to COCO format**
 ```bash
-python xlabel_cli.py read single output_image.xlabel.png --output-json extracted_meta.json
+python xlabel_cli.py convert --input-dir ./xlabel_dataset --output-file coco_dataset.json --format coco
 ```
 
-#### 4. Read Metadata (Batch)
+## How It Works
 
-*   `./input_xlabels/` contains `img1.xlabel.png`, `img2.xlabel.png`, ...
-*   `./output_jsons/` is where extracted JSON files will be saved.
-
-Command:
-```bash
-python xlabel_cli.py read batch ./input_xlabels/ ./output_jsons/
-```
-
-#### 5. Convert COCO to XLabel PNGs (Batch)
-
-*   `annotations.coco.json` is your COCO annotation file.
-*   `./coco_images/` contains the images referenced in the COCO file.
-*   `./output_xlabels_from_coco/` is the output directory.
-
-Command:
-```bash
-python xlabel_cli.py convert 2xlabel coco --batch \
-    --input-coco annotations.coco.json \
-    --input-image-dir ./coco_images/ \
-    --output-xlabel-dir ./output_xlabels_from_coco/
-```
-
-#### 6. Convert XLabel PNGs to Aggregated COCO JSON (Batch)
-
-*   `./my_xlabel_dataset/` contains your XLabel PNGs.
-*   `output_dataset.coco.json` will be the single aggregated COCO file.
-
-Command:
-```bash
-python xlabel_cli.py convert fromxlabel coco --batch \
-    --input-xlabel-dir-conv ./my_xlabel_dataset/ \
-    --output-coco output_dataset.coco.json
-```
-
-#### 7. Convert VOC XMLs to XLabel PNGs (Batch)
-
-*   `./voc_images/` contains your images.
-*   `./voc_annotations/` contains corresponding `*.xml` files.
-*   `./output_xlabels_from_voc/` is the output directory.
-
-Command:
-```bash
-python xlabel_cli.py convert 2xlabel voc --batch \
-    --input-image-dir ./voc_images/ \
-    --input-voc-dir ./voc_annotations/ \
-    --output-xlabel-dir ./output_xlabels_from_voc/
-```
-
-#### 8. Convert XLabel PNGs to YOLO (Batch)
-
-*   `./my_xlabel_dataset/` contains your XLabel PNGs.
-*   `./yolo_output/` will store `*.txt` annotation files and a single `classes.txt`.
-
-Command:
-```bash
-python xlabel_cli.py convert fromxlabel yolo --batch \
-    --input-xlabel-dir-conv ./my_xlabel_dataset/ \
-    --output-dir-conv ./yolo_output/ \
-    --yolo-class-names-output ./yolo_output/classes.txt 
-```
-*(Note: For single conversions, use `--single` instead of `--batch` and provide single file paths as per `--help` for the specific command.)*
-
-
-## Why PNG Custom Chunks?
-
-While EXIF was an initial thought, PNG's chunk-based architecture is more suitable for embedding larger, structured binary data. Custom ancillary chunks (like `xlDa`) can be safely ignored by applications that don't understand them, ensuring the image remains viewable everywhere. This method also avoids the stricter size limitations and text-only nature of many EXIF tags.
-
-## Project Structure
-
-*   `xlabel_cli.py`: The main command-line interface.
-*   `xcreator.py`: Module for creating XLabel PNGs (embedding metadata).
-*   `xreader.py`: Module for reading XLabel metadata from PNGs.
-*   `xlabel_format_converters/` (Package):
-    *   `common.py`: Shared exceptions and constants.
-    *   `coco_converter.py`: Handles COCO format conversions.
-    *   `voc_converter.py`: Handles Pascal VOC XML conversions.
-    *   `yolo_converter.py`: Handles YOLO text format conversions.
-    *   `__init__.py`: Makes the directory a package and exports relevant functions/classes.
-
-## Limitations & Considerations
-
-*   **Chunk Size:** While PNG chunks can be large (up to 2^31-1 bytes), embedding extremely verbose metadata (e.g., very complex segmentations for many objects) could significantly increase file size.
-*   **PNG Specific:** This method is specific to the PNG format.
-*   **Tooling:** Standard image viewers won't display the annotations. This toolkit is needed to access and utilize the embedded data.
-*   **Modification by Other Tools:** Some aggressive image optimization tools *might* strip unknown custom chunks, though this is less common for ancillary chunks if correctly flagged.
-
-## Future Ideas
-
-*   Support for more annotation types (e.g., keypoints, polylines).
-*   Integration with labeling tools.
-*   A simple GUI wrapper.
-*   Support for other image formats that allow custom metadata embedding.
+XLabel leverages the Portable Network Graphics (PNG) specification, which allows for custom ancillary "chunks" to be stored within the file. We use a custom chunk with the type `xlDa` to hold a compressed JSON payload containing all annotation data. This ensures that the image remains a valid, viewable PNG file in any standard image viewer, while the metadata is readily available to tools that know how to look for it.
 
 ## Contributing
 
-Contributions, bug reports, and feature requests are welcome! Please open an issue or submit a pull request.
+Contributions are welcome! If you have ideas for new features, bug fixes, or improvements, please open an issue or submit a pull request.
 
----
-*This project evolved from an experiment with EXIF tags to a more robust PNG custom chunk implementation for better data integrity and flexibility.*
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
