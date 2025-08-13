@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QStatusBar, QDockWidget, QFileDialog, QMessageBox, QToolBar,
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSlider, QColorDialog
 )
-from PySide6.QtCore import Qt, QRect, QSize
+from PySide6.QtCore import Qt, QRect, QSize, QPoint
 from PySide6.QtGui import QAction, QIcon, QActionGroup, QColor, QPixmap, QPainter, QFont
 from .image_viewer import ImageViewer
 from .annotation_list import AnnotationList
@@ -446,8 +446,10 @@ class XLabelMainWindow(QMainWindow):
                     QMessageBox.information(self, "Export Info", "No bounding box annotations found to export for YOLO.")
                     return
             elif selected_filter == "COCO (*.json)":
-                QMessageBox.information(self, "Not Implemented", "COCO export is not yet available.")
-                return
+                output_content = self.exporter.to_coco(all_annotations, self.current_file_path, img_w, img_h)
+                if not json.loads(output_content)['annotations']:
+                    QMessageBox.information(self, "Export Info", "No annotations found to export for COCO.")
+                    return
             elif selected_filter == "Pascal VOC (*.xml)":
                 QMessageBox.information(self, "Not Implemented", "Pascal VOC export is not yet available.")
                 return
