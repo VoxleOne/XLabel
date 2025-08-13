@@ -8,6 +8,8 @@ from .image_viewer import ImageViewer
 from .annotation_list import AnnotationList
 from .class_list import ClassList
 from .panels import BoundingBoxPanel, PolygonPanel, MaskPanel, KeypointsPanel
+from xlabel.xlabel_io import MetadataHandler
+import json
 
 class KeypointsControlWidget(QWidget):
     """A widget to hold the controls for the KeypointsPanel."""
@@ -73,21 +75,30 @@ class XLabelMainWindow(QMainWindow):
         self.image_viewer = ImageViewer(self)
         self.setCentralWidget(self.image_viewer)
         
+        # --- State ---
+        self.current_file_path = None
+        self.metadata_handler = MetadataHandler()
+        self.panels = {}
+
         self.bbox_panel = BoundingBoxPanel(self.image_viewer)
         self.bbox_panel.set_ribbon_color(QColor("deepskyblue"))
         self.bbox_panel.new_annotation.connect(self._on_new_annotation)
+        self.panels['bbox'] = self.bbox_panel
 
         self.polygon_panel = PolygonPanel(self.image_viewer)
         self.polygon_panel.set_ribbon_color(QColor("mediumseagreen"))
         self.polygon_panel.new_annotation.connect(self._on_new_annotation)
+        self.panels['polygon'] = self.polygon_panel
         
         self.mask_panel = MaskPanel(self.image_viewer)
         self.mask_panel.set_ribbon_color(QColor("gold"))
         self.mask_panel.new_annotation.connect(self._on_new_annotation)
+        self.panels['mask'] = self.mask_panel
 
         self.keypoints_panel = KeypointsPanel(self.image_viewer)
         self.keypoints_panel.set_ribbon_color(QColor("orange"))
         self.keypoints_panel.new_annotation.connect(self._on_new_annotation)
+        self.panels['keypoints'] = self.keypoints_panel
 
         self.annotation_list = AnnotationList(self)
         self.annotations_dock = QDockWidget("Annotations", self)
@@ -151,23 +162,76 @@ class XLabelMainWindow(QMainWindow):
     def _open_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.png *.jpg *.jpeg)")
         if not file_name: return
+        
+        self.current_file_path = file_name
         pixmap = QPixmap(file_name)
         if pixmap.isNull():
             QMessageBox.warning(self, "Open Error", "Failed to load image.")
+            self.current_file_path = None
             return
 
-        self.bbox_panel.clear_annotations()
-        self.polygon_panel.clear_annotations()
-        self.mask_panel.clear_annotations()
-        self.keypoints_panel.clear_annotations()
+        for panel in self.panels.values():
+            panel.clear_annotations()
 
         self.image_viewer.set_image(pixmap)
         self.image_viewer.clear_active_panel()
+
+        self._load_annotations_from_file()
         
         for action in self.mode_actions:
             action.setEnabled(True)
+        self.save_action.setEnabled(True)
+        self.save_as_action.setEnabled(True)
+        self.export_as_action.setEnabled(True)
         
+        self.setWindowTitle(f"XLabel - {self.current_file_path}")
         self.statusBar().showMessage(f"Loaded {file_name}")
+
+    def _load_annotations_from_file(self):
+        if not self.current_file_path: return
+        
+        all_annotations = self.metadata_handler.load_annotations(self.current_file_path)
+        if not all_annotations:
+            self.statusBar().showMessage("No annotations found in image metadata.", 3000)
+            return
+
+        # Here we would need a more robust way to deserialize the data
+        # back into Qt objects (QRect, QPixmap, etc.). For now, this is a simplification.
+        if 'bbox' in all_annotations and hasattr(self.bbox_panel, '_annotations'):
+             self.bbox_panel._annotations = [QRect(*r) for r in all_annotations['bbox']['completed']]
+        if 'polygon' in all_annotations and hasattr(self.polygon_panel, '_annotations'):
+             self.polygon_panel._annotations = [[QPoint(*p) for p in poly] for poly in all_annotations['polygon']['completed']]
+        
+        # Mask and Keypoints loading would be more complex and is omitted for this example.
+
+        self.image_viewer.update_annotations_display()
+        self.statusBar().showMessage(f"Loaded annotations from {self.current_file_path}", 4000)
+
+    def _get_all_annotations(self) -> dict:
+        """Collects annotations from all panels into a single dictionary."""
+        all_annotations = {}
+        for name, panel in self.panels.items():
+            # A more robust solution would be needed to serialize custom Qt objects
+            # like QRect, QPixmap, QPoint. This is a simplified example.
+            ann_data = panel.get_annotations()
+            
+            # Simple serialization for BBox (list of lists)
+            if name == 'bbox' and ann_data.get('completed'):
+                all_annotations[name] = {
+                    'completed': [
+                        [r.x(), r.y(), r.width(), r.height()] for r in ann_data['completed']
+                    ]
+                }
+            # Simple serialization for Polygon (list of lists of lists)
+            elif name == 'polygon' and ann_data.get('completed'):
+                 all_annotations[name] = {
+                    'completed': [
+                        [[p.x(), p.y()] for p in poly] for poly in ann_data['completed']
+                    ]
+                }
+            # Other types would need their own serialization logic
+            # For now, we just store what we can easily serialize.
+        return all_annotations
 
     def _create_colored_icon(self, color: QColor, text:str = "", size=QSize(32, 32)) -> QIcon:
         pixmap = QPixmap(size)
@@ -194,15 +258,28 @@ class XLabelMainWindow(QMainWindow):
     def _create_menu(self):
         menu = self.menuBar()
         file_menu = menu.addMenu("&File")
+        
         open_action = QAction("Open Image...", self)
         open_action.triggered.connect(self._open_file)
         file_menu.addAction(open_action)
-        save_action = QAction("Save", self)
-        save_action.triggered.connect(self._save_file)
-        file_menu.addAction(save_action)
-        save_as_action = QAction("Save As...", self)
-        save_as_action.triggered.connect(self._save_file_as)
-        file_menu.addAction(save_as_action)
+        
+        self.save_action = QAction("Save Annotations", self)
+        self.save_action.triggered.connect(self._save_file)
+        self.save_action.setEnabled(False)
+        file_menu.addAction(self.save_action)
+        
+        self.save_as_action = QAction("Save Annotations As...", self)
+        self.save_as_action.triggered.connect(self._save_file_as)
+        self.save_as_action.setEnabled(False)
+        file_menu.addAction(self.save_as_action)
+        
+        file_menu.addSeparator()
+
+        self.export_as_action = QAction("Export As...", self)
+        self.export_as_action.triggered.connect(self._export_file_as)
+        self.export_as_action.setEnabled(False)
+        file_menu.addAction(self.export_as_action)
+
         help_menu = menu.addMenu("&Help")
         about_action = QAction("About", self)
         about_action.triggered.connect(self._show_about)
@@ -278,10 +355,61 @@ class XLabelMainWindow(QMainWindow):
             action.setVisible(False)
 
     def _save_file(self):
-        QMessageBox.information(self, "Save", "This would save the current annotations.")
+        if not self.current_file_path:
+            self._save_file_as()
+            return
+
+        all_annotations = self._get_all_annotations()
+        if not all_annotations:
+            QMessageBox.information(self, "Save", "There are no annotations to save.")
+            return
+        
+        # Saving to PNG metadata requires the file to be PNG.
+        # We can offer to convert it.
+        if not self.current_file_path.lower().endswith('.png'):
+            reply = QMessageBox.question(self, "Save to PNG",
+                                         "Saving annotations to metadata requires converting the image to PNG format. "
+                                         "A new file will be created. Continue?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No:
+                return
+
+        new_path, success = self.metadata_handler.save_annotations(self.current_file_path, all_annotations)
+
+        if success:
+            self.current_file_path = new_path
+            self.setWindowTitle(f"XLabel - {self.current_file_path}")
+            self.statusBar().showMessage(f"Annotations saved to {self.current_file_path}", 4000)
+        else:
+            QMessageBox.warning(self, "Save Error", "Could not save annotations to the image file.")
 
     def _save_file_as(self):
-        QMessageBox.information(self, "Save As", "This would save to a new file.")
+        if not self.current_file_path: return
+        
+        all_annotations = self._get_all_annotations()
+        if not all_annotations:
+            QMessageBox.information(self, "Save As", "There are no annotations to save.")
+            return
+
+        # Propose a new filename based on the old one, but as a PNG
+        base_path = self.current_file_path.rsplit('.', 1)[0]
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save Annotations As...", f"{base_path}_annotated.png", "PNG Image (*.png)")
+        
+        if not file_name: return
+
+        new_path, success = self.metadata_handler.save_annotations(self.current_file_path, all_annotations)
+        
+        if success:
+            # Since we are saving "as", we need to copy the image content to the new path
+            # The metadata_handler already does this. We just need to update our state.
+            self.current_file_path = new_path
+            self.setWindowTitle(f"XLabel - {self.current_file_path}")
+            self.statusBar().showMessage(f"Annotations saved to {self.current_file_path}", 4000)
+        else:
+            QMessageBox.warning(self, "Save Error", "Could not save annotations to the new image file.")
+
+    def _export_file_as(self):
+        QMessageBox.information(self, "Export As", "This would open a dialog to export annotations to formats like YOLO, COCO, etc.")
 
     def _show_about(self):
         QMessageBox.about(self, "About XLabel", "<b>XLabel</b><br>Created by VoxleOne & Copilot.")
