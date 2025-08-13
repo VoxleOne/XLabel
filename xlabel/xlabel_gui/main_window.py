@@ -8,8 +8,9 @@ from .image_viewer import ImageViewer
 from .annotation_list import AnnotationList
 from .class_list import ClassList
 from .panels import BoundingBoxPanel, PolygonPanel, MaskPanel, KeypointsPanel
-from xlabel.xlabel_io import MetadataHandler
+from xlabel.xlabel_io import MetadataHandler, Exporter
 import json
+import os
 
 class KeypointsControlWidget(QWidget):
     """A widget to hold the controls for the KeypointsPanel."""
@@ -78,6 +79,7 @@ class XLabelMainWindow(QMainWindow):
         # --- State ---
         self.current_file_path = None
         self.metadata_handler = MetadataHandler()
+        self.exporter = Exporter()
         self.panels = {}
 
         self.bbox_panel = BoundingBoxPanel(self.image_viewer)
@@ -202,7 +204,7 @@ class XLabelMainWindow(QMainWindow):
         if 'polygon' in all_annotations and hasattr(self.polygon_panel, '_annotations'):
              self.polygon_panel._annotations = [[QPoint(*p) for p in poly] for poly in all_annotations['polygon']['completed']]
         
-        # Mask and Keypoints loading would be more complex and is omitted for this example.
+        # Mask and Keypoints loading would be more complex and is omitted for this sprint.
 
         self.image_viewer.update_annotations_display()
         self.statusBar().showMessage(f"Loaded annotations from {self.current_file_path}", 4000)
@@ -409,7 +411,54 @@ class XLabelMainWindow(QMainWindow):
             QMessageBox.warning(self, "Save Error", "Could not save annotations to the new image file.")
 
     def _export_file_as(self):
-        QMessageBox.information(self, "Export As", "This would open a dialog to export annotations to formats like YOLO, COCO, etc.")
+        if not self.current_file_path or not self.image_viewer._pixmap:
+            QMessageBox.warning(self, "Export Error", "Please open an image first.")
+            return
+
+        all_annotations = self._get_all_annotations()
+        if not all_annotations:
+            QMessageBox.information(self, "Export", "There are no annotations to export.")
+            return
+
+        # Define the supported formats
+        formats = [
+            "YOLO (*.txt)",
+            "COCO (*.json)",
+            "Pascal VOC (*.xml)",
+        ]
+        file_filter = ";;".join(formats)
+        
+        base_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
+        
+        file_name, selected_filter = QFileDialog.getSaveFileName(self, "Export Annotations As...", base_name, file_filter)
+        
+        if not file_name:
+            return
+
+        try:
+            pixmap = self.image_viewer._pixmap
+            img_w, img_h = pixmap.width(), pixmap.height()
+            
+            output_content = ""
+            if selected_filter == "YOLO (*.txt)":
+                output_content = self.exporter.to_yolo(all_annotations, img_w, img_h)
+                if not output_content:
+                    QMessageBox.information(self, "Export Info", "No bounding box annotations found to export for YOLO.")
+                    return
+            elif selected_filter == "COCO (*.json)":
+                QMessageBox.information(self, "Not Implemented", "COCO export is not yet available.")
+                return
+            elif selected_filter == "Pascal VOC (*.xml)":
+                QMessageBox.information(self, "Not Implemented", "Pascal VOC export is not yet available.")
+                return
+
+            with open(file_name, 'w') as f:
+                f.write(output_content)
+            
+            self.statusBar().showMessage(f"Annotations exported to {file_name}", 4000)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Export Failed", f"An error occurred during export:\n{e}")
 
     def _show_about(self):
-        QMessageBox.about(self, "About XLabel", "<b>XLabel</b><br>Created by VoxleOne & Copilot.")
+        QMessageBox.about(self, "About XLabel", "<b>XLabel</b><br>Created by VoxleOne ebmarques & Copilot.")
