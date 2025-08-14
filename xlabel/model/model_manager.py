@@ -26,8 +26,8 @@ class ModelManager:
         
         model_path = self.available_models[self.selected_model_name]
         print(f"Loading model: {self.selected_model_name} from {model_path}")
+        # For now, we'll just re-initialize. A real implementation might cache models.
         self._predictor = ModelPredictor(model_path)
-        # In a real scenario, you'd handle loading errors here
 
     def set_confidence_threshold(self, value: float):
         """Sets the confidence threshold (0.0 to 1.0)."""
@@ -42,8 +42,10 @@ class ModelManager:
     def predict(self, image_path: str, image_width: int, image_height: int) -> list:
         """Runs prediction using the currently loaded model and settings."""
         if not self._predictor:
+            print("Error: Predictor not loaded.")
             return []
         
+        # Pass the current settings to the predictor
         return self._predictor.predict(
             image_path=image_path,
             image_width=image_width,
