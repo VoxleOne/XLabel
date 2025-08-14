@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPixmap, QPainter, QPen, QPolygonF, QResizeEvent, QColor, QBrush
+from PySide6.QtGui import QPixmap, QPainter, QPen, QPolygonF, QResizeEvent, QColor
 from PySide6.QtCore import Qt, QRect, QPoint
 
 class ImageViewer(QWidget):
@@ -134,74 +134,51 @@ class ImageViewer(QWidget):
         
         painter.translate(self._drawing_offset)
         
-        # --- START REFACTORED DRAWING LOGIC ---
         completed_annotations = self._annotations_to_draw.get('completed', [])
         
-        # Keypoint-specific data
-        completed_colors = self._annotations_to_draw.get('completed_colors', [])
-        point_radius = self._annotations_to_draw.get('point_radius', 5)
-
-        for i, annotation in enumerate(completed_annotations):
+        for i, annotation_data in enumerate(completed_annotations):
             painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-            is_selected = (i == self._selected_rect_index)
 
-            if isinstance(annotation, QPixmap): # MASK
+            # --- UPDATED: Handle different annotation structures ---
+            annotation = annotation_data
+            source = 'manual'
+            if isinstance(annotation_data, dict):
+                # This handles the new bbox format: {'rect': QRect, 'source': str}
+                annotation = annotation_data.get('rect', QRect())
+                source = annotation_data.get('source', 'manual')
+
+            if isinstance(annotation, QPixmap):
                 painter.drawPixmap(0, 0, annotation)
-                if is_selected:
-                    highlight_pixmap = QPixmap(annotation.size())
-                    highlight_pixmap.fill(Qt.transparent)
-                    p = QPainter(highlight_pixmap)
-                    p.drawPixmap(0, 0, annotation)
-                    p.setCompositionMode(QPainter.CompositionMode_SourceIn)
-                    p.fillRect(highlight_pixmap.rect(), QColor(255, 255, 0, 100))
-                    p.end()
-                    painter.drawPixmap(0, 0, highlight_pixmap)
-            else: # BBOX, POLYGON, KEYPOINTS
-                pen_width = 3 if is_selected else 2
-                pen_color = Qt.yellow if is_selected else Qt.red
+            else:
+                pen_width = 3 if i == self._selected_rect_index else 2
+                pen_color = Qt.yellow if i == self._selected_rect_index else Qt.red
                 pen = QPen(pen_color, pen_width / max(scale_x, scale_y))
+
+                # --- UPDATED: Visual distinction for model predictions ---
+                if source == 'model':
+                    pen.setStyle(Qt.DashLine)
+                
                 painter.setPen(pen)
-
-                if isinstance(annotation, QRect): # BBOX
+                if isinstance(annotation, QRect):
                     painter.drawRect(annotation)
-                elif isinstance(annotation, list) and annotation and isinstance(annotation[0], QPoint): # POLYGON
+                elif isinstance(annotation, list) and annotation:
                     painter.drawPolygon(QPolygonF(annotation))
-                elif isinstance(annotation, list) and annotation and isinstance(annotation[0], dict): # KEYPOINTS (new)
-                    # For completed keypoints, we draw them with their stored colors
-                    point_colors = completed_colors[i] if i < len(completed_colors) else []
-                    for p_idx, point_data in enumerate(annotation):
-                        color = point_colors[p_idx] if p_idx < len(point_colors) else QColor(Qt.green)
-                        painter.setBrush(QBrush(color))
-                        painter.setPen(QPen(Qt.black, 1 / max(scale_x, scale_y)))
-                        painter.drawEllipse(point_data['pos'], point_radius, point_radius)
-
+        
         active_annotation = self._annotations_to_draw.get('active')
-        if active_annotation:
-            pen = QPen(Qt.cyan, 2 / max(scale_x, scale_y))
-            painter.setPen(pen)
+        pen = QPen(Qt.cyan, 2 / max(scale_x, scale_y))
+        painter.setPen(pen)
 
-            if isinstance(active_annotation, QPixmap): # MASK
-                painter.drawPixmap(0, 0, active_annotation)
-            elif isinstance(active_annotation, QRect): # BBOX
-                painter.drawRect(active_annotation)
-            elif isinstance(active_annotation, list) and active_annotation and isinstance(active_annotation[0], QPoint): # POLYGON
-                painter.drawPoints(active_annotation)
-                if len(active_annotation) > 1:
-                    painter.drawPolyline(QPolygonF(active_annotation))
-                cursor_pos = self._annotations_to_draw.get('cursor_pos')
-                if cursor_pos:
-                    painter.drawLine(active_annotation[-1], cursor_pos)
-            elif isinstance(active_annotation, list): # KEYPOINTS (active)
-                active_colors = self._annotations_to_draw.get('active_colors', [])
-                selected_idx = self._annotations_to_draw.get('selected_point_idx', -1)
-                for i, point_data in enumerate(active_annotation):
-                    color = active_colors[i] if i < len(active_colors) else self.point_color
-                    painter.setBrush(QBrush(color))
-                    
-                    pen_color = Qt.yellow if i == selected_idx else Qt.black
-                    painter.setPen(QPen(pen_color, 2 / max(scale_x, scale_y)))
-                    painter.drawEllipse(point_data['pos'], point_radius, point_radius)
-        # --- END REFACTORED DRAWING LOGIC ---
+        if isinstance(active_annotation, QPixmap):
+            painter.drawPixmap(0, 0, active_annotation)
+        elif isinstance(active_annotation, QRect):
+            painter.drawRect(active_annotation)
+        elif isinstance(active_annotation, list) and active_annotation:
+            painter.drawPoints(active_annotation)
+            if len(active_annotation) > 1:
+                painter.drawPolyline(QPolygonF(active_annotation))
+            cursor_pos = self._annotations_to_draw.get('cursor_pos')
+            if cursor_pos:
+                painter.drawLine(active_annotation[-1], cursor_pos)
 
         painter.restore()
             
