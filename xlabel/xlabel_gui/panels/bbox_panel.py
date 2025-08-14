@@ -20,6 +20,15 @@ class BoundingBoxPanel(BasePanel):
             "active": self._current_rect
         }
 
+      # --- NEW METHOD ---
+    def add_annotation(self, bbox: QRect, class_id: int = 0):
+        """
+        Programmatically adds a bounding box annotation.
+        Used for model predictions.
+        """
+        # To store the class_id with the annotation
+        self._annotations.append(bbox)
+
     def delete_annotation(self, index):
         if 0 <= index < len(self._annotations):
             self._annotations.pop(index)
