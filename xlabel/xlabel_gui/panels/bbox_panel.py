@@ -3,12 +3,12 @@ from PySide6.QtGui import QKeyEvent
 from .base_panel import BasePanel
 
 class BoundingBoxPanel(BasePanel):
-    # --- THE FIX: The signal no longer needs to carry data ---
     new_annotation = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._annotations = []
+        # --- UPDATED: Store dicts instead of just QRects ---
+        self._annotations = [] 
         self._is_drawing = False
         self._start_pos = None
         self._current_rect = None
@@ -20,14 +20,14 @@ class BoundingBoxPanel(BasePanel):
             "active": self._current_rect
         }
 
-      # --- NEW METHOD ---
-    def add_annotation(self, bbox: QRect, class_id: int = 0):
-        """
-        Programmatically adds a bounding box annotation.
-        Used for model predictions.
-        """
-        # To store the class_id with the annotation
-        self._annotations.append(bbox)
+    # --- UPDATED: To handle source and class_id ---
+    def add_annotation(self, bbox: QRect, source='manual', class_id=0):
+        """Programmatically adds a bounding box annotation."""
+        self._annotations.append({
+            "rect": bbox,
+            "source": source,
+            "class_id": class_id
+        })
 
     def delete_annotation(self, index):
         if 0 <= index < len(self._annotations):
@@ -63,8 +63,8 @@ class BoundingBoxPanel(BasePanel):
         
         self._is_drawing = False
         if self._current_rect and self._current_rect.width() > 3 and self._current_rect.height() > 3:
-            # --- THE FIX: Add the annotation directly and emit the simple signal ---
-            self._annotations.append(self._current_rect)
+            # --- UPDATED: Manual annotations are added via add_annotation ---
+            self.add_annotation(self._current_rect, source='manual')
             self._current_rect = None
             self.new_annotation.emit()
         else:
