@@ -4,17 +4,19 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QRect, QSize, QPoint
 from PySide6.QtGui import QAction, QIcon, QActionGroup, QColor, QPixmap, QPainter, QFont
-from .image_viewer import ImageViewer
-from .annotation_list import AnnotationList
-from .class_list import ClassList
-from .panels import BoundingBoxPanel, PolygonPanel, MaskPanel, KeypointsPanel
-from .widgets import KeypointsControlWidget
+from xlabel.xlabel_gui.image_viewer import ImageViewer
+from xlabel.xlabel_gui.annotation_list import AnnotationList
+from xlabel.xlabel_gui.class_list import ClassList
+from xlabel.xlabel_gui.panels import BoundingBoxPanel, PolygonPanel, MaskPanel, KeypointsPanel
+# --- UPDATED: Import new dialog ---
+from xlabel.xlabel_gui.widgets import KeypointsControlWidget, ModelSettingsDialog
 from xlabel.xlabel_io import MetadataHandler, Exporter
-from ..model import ModelManager  # UPDATED
+from xlabel.model import ModelManager
 import json
 import os
 
 class XLabelMainWindow(QMainWindow):
+    # ... (__init__ and other methods remain the same) ...
     def __init__(self):
         super().__init__()
         self.setWindowTitle("XLabel - Annotation Tool")
@@ -23,33 +25,28 @@ class XLabelMainWindow(QMainWindow):
         self.image_viewer = ImageViewer(self)
         self.setCentralWidget(self.image_viewer)
         
-        # --- State ---
         self.current_file_path = None
         self.metadata_handler = MetadataHandler()
         self.exporter = Exporter()
         self.panels = {}
-        # --- UPDATED: Use ModelManager for all model state ---
         self.model_manager = ModelManager()
 
         self.bbox_panel = BoundingBoxPanel(self.image_viewer)
-        self.bbox_panel.set_ribbon_color(QColor("deepskyblue"))
-        self.bbox_panel.new_annotation.connect(self._on_new_annotation)
         self.panels['bbox'] = self.bbox_panel
-
         self.polygon_panel = PolygonPanel(self.image_viewer)
-        self.polygon_panel.set_ribbon_color(QColor("mediumseagreen"))
-        self.polygon_panel.new_annotation.connect(self._on_new_annotation)
         self.panels['polygon'] = self.polygon_panel
-        
         self.mask_panel = MaskPanel(self.image_viewer)
-        self.mask_panel.set_ribbon_color(QColor("gold"))
-        self.mask_panel.new_annotation.connect(self._on_new_annotation)
         self.panels['mask'] = self.mask_panel
-
         self.keypoints_panel = KeypointsPanel(self.image_viewer)
-        self.keypoints_panel.set_ribbon_color(QColor("orange"))
-        self.keypoints_panel.new_annotation.connect(self._on_new_annotation)
         self.panels['keypoints'] = self.keypoints_panel
+        
+        for panel in self.panels.values():
+            panel.new_annotation.connect(self._on_new_annotation)
+        
+        self.bbox_panel.set_ribbon_color(QColor("deepskyblue"))
+        self.polygon_panel.set_ribbon_color(QColor("mediumseagreen"))
+        self.mask_panel.set_ribbon_color(QColor("gold"))
+        self.keypoints_panel.set_ribbon_color(QColor("orange"))
 
         self.annotation_list = AnnotationList(self)
         self.annotations_dock = QDockWidget("Annotations", self)
@@ -75,7 +72,7 @@ class XLabelMainWindow(QMainWindow):
 
         self.annotation_list.annotation_selected.connect(self.image_viewer.set_selected_rect)
         self.annotation_list.annotation_deleted.connect(self._on_delete_annotation)
-
+        
     def _set_active_mode(self, panel):
         self.keypoints_dock.hide()
         for action in self.contextual_actions:
@@ -133,7 +130,7 @@ class XLabelMainWindow(QMainWindow):
         self.save_as_action.setEnabled(True)
         self.export_as_action.setEnabled(True)
         
-        self.setWindowTitle(f"XLabel - {self.current_file_path}")
+        self.setWindowTitle(f"XLabel - {os.path.basename(self.current_file_path)}")
         self.statusBar().showMessage(f"Loaded {file_name}")
 
     def _load_annotations_from_file(self):
@@ -145,8 +142,7 @@ class XLabelMainWindow(QMainWindow):
             return
 
         if 'bbox' in all_annotations and hasattr(self.bbox_panel, '_annotations'):
-             # UPDATED: Handle new annotation format
-             for ann_data in all_annotations['bbox']['completed']:
+             for ann_data in all_annotations.get('bbox', {}).get('completed', []):
                  self.bbox_panel.add_annotation(
                      QRect(*ann_data['rect']), 
                      source=ann_data.get('source', 'manual'),
@@ -154,12 +150,11 @@ class XLabelMainWindow(QMainWindow):
                  )
 
         if 'polygon' in all_annotations and hasattr(self.polygon_panel, '_annotations'):
-             self.polygon_panel._annotations = [[QPoint(*p) for p in poly] for poly in all_annotations['polygon']['completed']]
+             self.polygon_panel._annotations = [[QPoint(*p) for p in poly] for poly in all_annotations.get('polygon', {}).get('completed', [])]
         
         self.image_viewer.update_annotations_display()
         self.statusBar().showMessage(f"Loaded annotations from {self.current_file_path}", 4000)
     
-    # --- NEW: Method to run model inference ---
     def _run_model_inference(self):
         if not self.current_file_path or not self.image_viewer._pixmap:
             QMessageBox.warning(self, "Warning", "Please load an image first.")
@@ -190,10 +185,16 @@ class XLabelMainWindow(QMainWindow):
         self.image_viewer.update_annotations_display()
         self.statusBar().showMessage(f"Found {len(predictions)} objects.", 3000)
 
-    # --- NEW: Method to open model settings dialog ---
+    # --- UPDATED: This now opens our new dialog ---
     def _open_model_settings(self):
-        # This will be implemented in the next step
-        QMessageBox.information(self, "Model Settings", "This will open the model settings dialog.")
+        """Opens the model settings dialog and applies changes if accepted."""
+        dialog = ModelSettingsDialog(self.model_manager, self)
+        
+        # The exec() method shows the dialog modally
+        if dialog.exec():
+            self.statusBar().showMessage("Model settings updated.", 3000)
+        else:
+            self.statusBar().showMessage("Model settings change cancelled.", 3000)
 
     def _get_all_annotations(self) -> dict:
         all_annotations = {}
@@ -201,7 +202,6 @@ class XLabelMainWindow(QMainWindow):
             ann_data = panel.get_annotations()
             
             if name == 'bbox' and ann_data.get('completed'):
-                # UPDATED: Serialize new annotation format
                 all_annotations[name] = {
                     'completed': [
                         {
@@ -220,7 +220,6 @@ class XLabelMainWindow(QMainWindow):
         return all_annotations
 
     def _create_colored_icon(self, color: QColor, text:str = "", size=QSize(32, 32)) -> QIcon:
-        # ... (This method is unchanged)
         pixmap = QPixmap(size)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
@@ -264,7 +263,6 @@ class XLabelMainWindow(QMainWindow):
         self.export_as_action.setEnabled(False)
         file_menu.addAction(self.export_as_action)
 
-        # --- NEW: Model Menu ---
         model_menu = menu.addMenu("&Model")
         
         self.run_auto_annotate_action = QAction("Run Auto-Annotate", self)
@@ -288,7 +286,6 @@ class XLabelMainWindow(QMainWindow):
         self.setStatusBar(status)
 
     def _create_mode_toolbar(self):
-        # This method is now correct as it does NOT contain the auto-annotate button
         mode_toolbar = QToolBar("Annotation Tools", self)
         mode_toolbar.setIconSize(QSize(32, 32))
         self.addToolBar(Qt.LeftToolBarArea, mode_toolbar)
@@ -335,7 +332,6 @@ class XLabelMainWindow(QMainWindow):
         mask_tool_group.setExclusive(True)
 
         self.brush_action = QAction(self._create_colored_icon(QColor(210, 210, 210), "B"), "Brush", self)
-        # ... (rest of method is unchanged) ...
         self.brush_action.setCheckable(True)
         self.brush_action.setChecked(True)
         self.brush_action.triggered.connect(self.mask_panel.set_brush_mode)
@@ -354,7 +350,6 @@ class XLabelMainWindow(QMainWindow):
             action.setVisible(False)
 
     def _save_file(self):
-        # This method requires a small update to use the correct save path
         if not self.current_file_path:
             self._save_file_as()
             return
@@ -368,17 +363,19 @@ class XLabelMainWindow(QMainWindow):
             reply = QMessageBox.question(self, "Save to PNG",
                                          "Saving annotations requires a PNG file. Would you like to save as a new PNG?",
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-            if reply == QMessageBox.Yes:
-                self._save_file_as()
-            return
+            if reply == QMessageBox.No:
+                return
+            base_path = save_path.rsplit('.', 1)[0]
+            save_path = f"{base_path}_annotated.png"
 
-        _, success = self.metadata_handler.save_annotations(save_path, all_annotations, source_image_path=self.current_file_path)
+        new_path, success = self.metadata_handler.save_annotations(save_path, all_annotations, source_image_path=self.current_file_path)
 
         if success:
-            self.setWindowTitle(f"XLabel - {save_path}")
-            self.statusBar().showMessage(f"Annotations saved to {save_path}", 4000)
+            self.current_file_path = new_path
+            self.setWindowTitle(f"XLabel - {os.path.basename(self.current_file_path)}")
+            self.statusBar().showMessage(f"Annotations saved to {self.current_file_path}", 4000)
         else:
-            QMessageBox.warning(self, "Save Error", f"Could not save annotations to {save_path}.")
+            QMessageBox.warning(self, "Save Error", f"Could not save annotations to {self.current_file_path}.")
 
     def _save_file_as(self):
         if not self.current_file_path: return
@@ -396,13 +393,12 @@ class XLabelMainWindow(QMainWindow):
         
         if success:
             self.current_file_path = new_path
-            self.setWindowTitle(f"XLabel - {self.current_file_path}")
+            self.setWindowTitle(f"XLabel - {os.path.basename(self.current_file_path)}")
             self.statusBar().showMessage(f"Annotations saved to {self.current_file_path}", 4000)
         else:
             QMessageBox.warning(self, "Save Error", "Could not save annotations to the new image file.")
 
     def _export_file_as(self):
-        # ... (This method is unchanged) ...
         if not self.current_file_path or not self.image_viewer._pixmap:
             QMessageBox.warning(self, "Export Error", "Please open an image first.")
             return
