@@ -168,6 +168,7 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
 
     except struct.error as e: raise XLabelFormatError(f"Struct unpacking error: {e}") from e
     except UnicodeDecodeError as e: raise XLabelFormatError(f"Unicode decode error: {e}") from e
+    except XLabelError: raise
     except Exception as e: logger.error(f"Unexpected error parsing xlDa chunk: {e}", exc_info=True); raise XLabelError(f"Unexpected error parsing xlDa: {e}") from e
 
 def read_xlabel_metadata_from_png(image_path):
