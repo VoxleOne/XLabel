@@ -29,6 +29,9 @@ SEG_TYPE_POLYGON = 0x01
 SEG_TYPE_RLE = 0x02
 
 # --- Input Validation Limits ---
+# These caps prevent excessive memory allocation from malformed/malicious xlDa
+# chunks.  They are deliberately generous — well above realistic usage — so
+# that valid files are never rejected.
 MAX_CLASS_NAMES = 10_000
 MAX_ANNOTATIONS = 100_000
 MAX_POLYGON_PARTS = 1_000
