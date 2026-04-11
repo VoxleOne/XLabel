@@ -29,6 +29,15 @@ SEG_TYPE_NONE = 0x00
 SEG_TYPE_POLYGON = 0x01
 SEG_TYPE_RLE = 0x02
 
+# --- Input Validation Limits ---
+MAX_CLASS_NAMES = 10_000
+MAX_ANNOTATIONS = 100_000
+MAX_POLYGON_PARTS = 1_000
+MAX_POLYGON_POINTS = 100_000
+MAX_RLE_COUNTS = 10_000_000
+MAX_CHUNK_SIZE = 500 * 1024 * 1024  # 500 MB
+MAX_CUSTOM_ATTR_SIZE = 1 * 1024 * 1024  # 1 MB
+
 def _parse_xlDa_chunk_data(chunk_data_bytes):
     """
     Deserializes the bytes from the xlDa chunk into a metadata dictionary.
@@ -58,6 +67,8 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
         num_cn_bytes = data_stream.read(struct.calcsize("<H"))
         if len(num_cn_bytes) < struct.calcsize("<H"): raise XLabelFormatError("Chunk data too short for num_class_names.")
         num_class_names, = struct.unpack("<H", num_cn_bytes)
+        if num_class_names > MAX_CLASS_NAMES:
+            raise XLabelFormatError(f"num_class_names ({num_class_names}) exceeds maximum ({MAX_CLASS_NAMES}).")
         class_names = []
         for i in range(num_class_names):
             len_name_bytes = data_stream.read(struct.calcsize("<B"))
@@ -71,11 +82,15 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
         num_ann_bytes = data_stream.read(struct.calcsize("<I"))
         if len(num_ann_bytes) < struct.calcsize("<I"): raise XLabelFormatError("Chunk data too short for num_annotations.")
         num_annotations, = struct.unpack("<I", num_ann_bytes)
+        if num_annotations > MAX_ANNOTATIONS:
+            raise XLabelFormatError(f"num_annotations ({num_annotations}) exceeds maximum ({MAX_ANNOTATIONS}).")
         annotations = []
         for ann_idx in range(num_annotations):
             ann = {}
             try:
                 ann["class_id"], = struct.unpack("<H", data_stream.read(struct.calcsize("<H")))
+                if ann["class_id"] >= num_class_names:
+                    raise XLabelFormatError(f"Ann {ann_idx}: class_id ({ann['class_id']}) >= num_class_names ({num_class_names}).")
                 ann["bbox"] = list(struct.unpack("<iiii", data_stream.read(struct.calcsize("<iiii"))))
                 score_val, = struct.unpack("<f", data_stream.read(struct.calcsize("<f")))
                 if score_val != -1.0: ann["score"] = score_val
@@ -89,11 +104,15 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
                         num_poly_parts_bytes = data_stream.read(struct.calcsize("<I"))
                         if not num_poly_parts_bytes: raise XLabelFormatError(f"Ann {ann_idx} poly: EOF reading num_poly_parts.")
                         num_poly_parts, = struct.unpack("<I", num_poly_parts_bytes)
+                        if num_poly_parts > MAX_POLYGON_PARTS:
+                            raise XLabelFormatError(f"Ann {ann_idx}: num_poly_parts ({num_poly_parts}) exceeds maximum ({MAX_POLYGON_PARTS}).")
                         polygons = []
                         for _ in range(num_poly_parts):
                             num_points_bytes = data_stream.read(struct.calcsize("<I"))
                             if not num_points_bytes: raise XLabelFormatError(f"Ann {ann_idx} poly part {_ + 1}: EOF reading num_points.")
                             num_points, = struct.unpack("<I", num_points_bytes)
+                            if num_points > MAX_POLYGON_POINTS:
+                                raise XLabelFormatError(f"Ann {ann_idx}: num_points ({num_points}) exceeds maximum ({MAX_POLYGON_POINTS}).")
                             poly_part = []
                             for _p in range(num_points): 
                                 point_bytes = data_stream.read(struct.calcsize("<ii"))
@@ -109,6 +128,8 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
                         num_rle_counts_bytes = data_stream.read(struct.calcsize("<I"))
                         if not num_rle_counts_bytes: raise XLabelFormatError(f"Ann {ann_idx} RLE: EOF reading num_rle_counts.")
                         num_rle_counts, = struct.unpack("<I", num_rle_counts_bytes)
+                        if num_rle_counts > MAX_RLE_COUNTS:
+                            raise XLabelFormatError(f"Ann {ann_idx}: num_rle_counts ({num_rle_counts}) exceeds maximum ({MAX_RLE_COUNTS}).")
                         
                         rle_counts = []
                         for _rc in range(num_rle_counts):
@@ -120,11 +141,15 @@ def _parse_xlDa_chunk_data(chunk_data_bytes):
                         logger.warning(f"Ann {ann_idx}: Unknown segmentation type {seg_type}.")
                 
                 custom_attrs_bytes_list = []
+                custom_attrs_size = 0
                 while True:
                     byte = data_stream.read(1)
                     if not byte: raise XLabelFormatError(f"Ann {ann_idx}: EOF reading custom attributes.")
                     if byte == b'\0': break
                     custom_attrs_bytes_list.append(byte)
+                    custom_attrs_size += 1
+                    if custom_attrs_size > MAX_CUSTOM_ATTR_SIZE:
+                        raise XLabelFormatError(f"Ann {ann_idx}: custom_attributes exceeds maximum size ({MAX_CUSTOM_ATTR_SIZE} bytes).")
                 
                 if custom_attrs_bytes_list:
                     custom_attrs_json = b''.join(custom_attrs_bytes_list).decode('utf-8')
@@ -163,6 +188,8 @@ def read_xlabel_metadata_from_png(image_path):
                 if not chunk_type_bytes: logger.warning(f"EOF reading chunk type in '{image_path}'."); break
 
                 if chunk_type_bytes == CHUNK_TYPE:
+                    if chunk_len > MAX_CHUNK_SIZE:
+                        raise XLabelFormatError(f"xlDa chunk size ({chunk_len}) exceeds maximum ({MAX_CHUNK_SIZE}).")
                     logger.info(f"Found '{CHUNK_TYPE.decode()}' chunk, length {chunk_len} in '{image_path}'.")
                     chunk_data = f.read(chunk_len)
                     if len(chunk_data) < chunk_len:
