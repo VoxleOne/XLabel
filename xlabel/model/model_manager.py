@@ -1,5 +1,10 @@
 from .predictor import ModelPredictor
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class ModelManager:
     """
     Manages the state of the ML model, its settings, and predictions.
@@ -25,31 +30,33 @@ class ModelManager:
             self.selected_model_name = model_name
         
         model_path = self.available_models[self.selected_model_name]
-        print(f"Loading model: {self.selected_model_name} from {model_path}")
-        # For now, we'll just re-initialize. A real implementation might cache models.
+        logger.info(f"Loading model: {self.selected_model_name} from {model_path}")
         self._predictor = ModelPredictor(model_path)
 
     def set_confidence_threshold(self, value: float):
         """Sets the confidence threshold (0.0 to 1.0)."""
         self.confidence_threshold = max(0.0, min(1.0, value))
-        print(f"Confidence threshold set to: {self.confidence_threshold}")
+        logger.info(f"Confidence threshold set to: {self.confidence_threshold}")
 
     def set_iou_threshold(self, value: float):
         """Sets the IOU threshold for NMS (0.0 to 1.0)."""
         self.iou_threshold = max(0.0, min(1.0, value))
-        print(f"IOU threshold set to: {self.iou_threshold}")
+        logger.info(f"IOU threshold set to: {self.iou_threshold}")
 
     def predict(self, image_path: str, image_width: int, image_height: int) -> list:
         """Runs prediction using the currently loaded model and settings."""
         if not self._predictor:
-            print("Error: Predictor not loaded.")
+            logger.error("Predictor not loaded.")
             return []
         
-        # Pass the current settings to the predictor
-        return self._predictor.predict(
-            image_path=image_path,
-            image_width=image_width,
-            image_height=image_height,
-            confidence_threshold=self.confidence_threshold,
-            iou_threshold=self.iou_threshold
-        )
+        try:
+            return self._predictor.predict(
+                image_path=image_path,
+                image_width=image_width,
+                image_height=image_height,
+                confidence_threshold=self.confidence_threshold,
+                iou_threshold=self.iou_threshold
+            )
+        except NotImplementedError as e:
+            logger.warning(f"{e}")
+            return []

@@ -12,19 +12,28 @@ dependencies = [
 # after installing the package.
 [project.scripts]
 xlabel = "xlabel.cli:main"
-xlabel-gui = "xlabel.gui:main"
+xlabel-gui = "xlabel.main:main"
 
-# Development dependencies for testing, formatting, and linting.
-# Install with: pip install -e .[dev]
+# Optional dependencies for GUI, development, and ML.
+# Install with: pip install -e .[gui] or pip install -e .[dev]
 [project.optional-dependencies]
+gui = [
+    "PySide6>=6.5.0",
+]
 dev = [
     "pytest",
     "black",
     "ruff",
 ]
+ml = [
+    "ultralytics",
+]
 
 [tool.black]
 line-length = 88
+
+[tool.setuptools.packages.find]
+include = ["xlabel*"]
 
 [tool.ruff.lint]
 select = [

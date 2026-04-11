@@ -1,15 +1,3 @@
-numpy
-scipy
-Pillow
-pyexiftool
-cython
-matplotlib
-scikit-image
-tensorflow
-keras
-opencv-python
-h5py
-imgaug
-Shapely
-ultralytics
-IPython[all]
+# Canonical dependency declarations are in pyproject.toml
+# Install with: pip install -e .[dev]
+Pillow>=9.0.0
