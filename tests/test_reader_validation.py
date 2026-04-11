@@ -130,3 +130,13 @@ class TestCustomAttributesLimit:
         path = _make_png_with_xlDa(bytes(buf), tmp_dir)
         with pytest.raises(reader.XLabelFormatError, match="EOF reading custom attributes"):
             reader.read_xlabel_metadata_from_png(path)
+
+
+class TestUnsupportedVersion:
+    def test_unsupported_version_rejected(self, tmp_dir):
+        """A version not in _VERSION_PARSERS raises XLabelVersionError."""
+        buf = _build_valid_header(version="0.9.0")
+        # Need at least enough data for the version check
+        path = _make_png_with_xlDa(bytes(buf), tmp_dir)
+        with pytest.raises(reader.XLabelVersionError, match="Unsupported"):
+            reader.read_xlabel_metadata_from_png(path)
