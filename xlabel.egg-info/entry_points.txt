@@ -1,0 +1,3 @@
+[console_scripts]
+xlabel = xlabel.cli:main
+xlabel-gui = xlabel.main:main

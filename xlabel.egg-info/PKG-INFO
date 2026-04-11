@@ -1,0 +1,137 @@
+Metadata-Version: 2.4
+Name: xlabel
+Version: 0.3.1
+Summary: Self-Contained Image Annotation Toolkit with GUI
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: Pillow>=9.0.0
+Provides-Extra: gui
+Requires-Dist: PySide6>=6.5.0; extra == "gui"
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Provides-Extra: ml
+Requires-Dist: ultralytics; extra == "ml"
+
+# XLabel🏷️ Annotation Tool
+
+**XLabel is an intuitive, general purpose graphic annotation tool for computer vision.** Its core innovation is the ability to embed annotations directly into PNG image files using custom data chunks. This approach simplifies dataset management by keeping images and their labels together in a single, portable file, eliminating the need for separate "sidecar" annotation files (like JSON, XML, or TXT).
+
+<p float="center">
+  <img src="assets/img/bbox-panel.png" width="45%" />
+  <img src="assets/img/polygon-panel.png" width="45%" />
+</p>
+<p>
+  <img src="assets/img/mask-panel.png" width="45%" />
+  <img src="assets/img/keypoints-panel.png" width="45%" />
+</p>
+*Click to enlarge.*
+
+---
+
+The project provides two primary components:
+1.  A feature-rich **graphical user interface (GUI)** for manual annotation.
+2.  A versatile **command-line interface (CLI)** for batch processing and format conversion.
+
+## Core Idea & Why XLabel?
+
+Computer Vision image labels are metadata. Instead of relying on external files that can get mismatched or lost, XLabel provides a tool to store this metadata directly within the PNG image itself using a custom chunk type named `xlDa` (XLabel Data). This makes datasets more portable, robust, and easier to manage.
+
+### Key Use Cases:
+
+*   **Smaller, Proprietary Datasets:** For research or internal projects where managing numerous sidecar files for a modest number of images becomes cumbersome, XLabel offers a streamlined, single-file-per-image approach.
+*   **Fine-Tuning Datasets:** Ideal for creating and managing small, specialized datasets for fine-tuning larger pre-trained models.
+*   **Confidential Datasets:** While not a cryptographic solution, embedding data within the image acts as a mild layer of obfuscation, as the annotations are not immediately visible as separate files.
+*   **Simplified Data Transfer & Archival:** Bundling images and labels simplifies sharing, backup, and archival of datasets.
+*   **Educational Purposes:** Provides a clear, practical example of how metadata can be embedded within file formats.
+
+## Features
+
+XLabel is designed to be a comprehensive solution for self-contained image annotation.
+
+### GUI Features
+
+*   **Multi-Mode Annotation:** Create different types of annotations in the same file.
+    *   **Bounding Boxes:** For object detection.
+    *   **Polygons:** For precise instance segmentation.
+    *   **Pixel Masks:** For semantic segmentation, with brush and eraser tools.
+    *   **Keypoints:** For pose estimation (planned).
+*   **Interactive Viewer:** Smoothly pan and zoom, with clear rendering of active and completed annotations.
+*   **Dockable Panels:** Manage annotation lists and class names in a clean, organized workspace.
+*   **Direct-to-PNG Workflow:** Open a standard PNG, add labels, and save it back as an XLabel-enhanced PNG.
+
+### Core & CLI Features (Planned)
+
+*   **Rich Format Conversion:** Convert between the integrated XLabel PNG format and common annotation standards, including **COCO**, **Pascal VOC**, and **YOLO**.
+*   **Sidecar Export:** Export embedded annotations back to traditional sidecar file structures (e.g., separate `.json` or `.xml` files) for compatibility with other tools.
+*   **Batch Processing:** Scriptable operations for handling entire datasets at once.
+
+## Installation
+
+XLabel requires **Python 3.11** or newer.
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/xlabel.git
+    cd xlabel
+    ```
+
+2.  **Install dependencies:**
+    Create a `requirements.txt` file with the following content:
+    ```text name=requirements.txt
+    PySide6
+    Pillow
+    ```
+    Then, install the packages using pip:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## Usage
+
+### XLabel Annotation GUI
+
+To launch the graphical annotation tool, run `main.py` from the `gui` module:
+
+```bash
+python -m xlabel.gui.main
+```
+
+**Workflow:**
+1.  Go to `File > Open XLabel PNG...` to load an image.
+2.  Select an annotation tool from the left-hand toolbar (Bounding Box, Polygon, or Mask).
+3.  Create annotations directly on the image:
+    *   **Bounding Box:** Click and drag to draw a box.
+    *   **Polygon:** Click to place points. Right-click or press `Enter` to finalize the shape.
+    *   **Mask:** Click and drag to paint with the brush. Right-click or press `Enter` to finalize the mask.
+4.  View and manage your annotations in the "Annotations" panel on the right.
+5.  Go to `File > Save` or `File > Save As...` to save your work. The annotations will be embedded directly into the new PNG file.
+
+### Command-Line Interface (CLI)
+
+The `xlabel_cli.py` script will provide powerful batch-processing capabilities for format conversion and data extraction.
+
+**(Note: The following examples are illustrative of planned features. Please refer to the script's help menu for exact commands once implemented.)**
+
+**Example: Convert a directory of XLabel PNGs to COCO format**
+```bash
+python xlabel_cli.py convert --input-dir ./xlabel_dataset --output-file coco_dataset.json --format coco
+```
+
+**Example: Export embedded annotations to a sidecar file structure**
+```bash
+python xlabel_cli.py export --input-dir ./xlabel_dataset --output-dir ./sidecar_dataset
+```
+
+## How It Works
+
+XLabel leverages the Portable Network Graphics (PNG) specification, which allows for custom ancillary "chunks" to be stored within the file. The tool uses a custom chunk with the type `xlDa` to hold a compressed JSON payload containing all annotation data. This ensures that the image remains a valid, viewable PNG file in any standard image viewer, while the metadata is readily available to tools that know how to look for it.
+
+## Contributing
+
+Contributions are welcome! If you have ideas for new features, bug fixes, or improvements, please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.

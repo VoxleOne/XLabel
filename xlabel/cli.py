@@ -14,9 +14,9 @@ import glob
 import xml.etree.ElementTree as ET
 import datetime 
 
-import creator
-import reader
-import xlabel_format_converters as xlabel_converters 
+from xlabel import creator as xcreator
+from xlabel import reader as xreader
+from xlabel import xlabel_format_converters as xlabel_converters 
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 cli_logger = logging.getLogger("xlabel_cli") 
